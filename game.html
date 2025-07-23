@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dinosaur Run</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for leaf icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #87CEEB; /* Sky blue background */
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars */
+            color: #2d3748; /* Dark text color */
+        }
+
+        .game-container {
+            position: relative;
+            background-color: #a0d9f4; /* Lighter blue for container */
+            border-radius: 1.5rem; /* Large rounded corners */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* Softer shadow */
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            max-width: 90vw; /* Max width for responsiveness */
+            width: 800px; /* Base width */
+            height: 450px; /* Base height */
+            border: 2px solid #63b3ed; /* Blue border */
+        }
+
+        canvas {
+            background: linear-gradient(to bottom, #87CEEB, #B0E0E6); /* Sky gradient for canvas */
+            border-radius: 1rem; /* Rounded corners for canvas */
+            display: block;
+            width: 100%; /* Canvas takes full width of container */
+            height: calc(100% - 80px); /* Adjust height for score/message */
+            max-height: 350px; /* Max height for canvas */
+            border: 2px solid #4299e1; /* Blue border */
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.5rem 1rem;
+            box-sizing: border-box;
+            align-items: center;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+
+        #score, #highScore, #coinScore, #highCoinScore {
+            font-size: 1.2rem; /* Slightly smaller for multiple scores */
+            font-weight: bold;
+            color: #2f855a; /* Forest green text */
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 5px rgba(47, 133, 90, 0.5); /* Subtle glow */
+            flex: 1 1 45%; /* Allow two items per row on wider screens */
+            min-width: 120px; /* Minimum width to prevent squishing */
+            text-align: left;
+        }
+        #highScore, #highCoinScore {
+            text-align: right;
+        }
+
+
+        #userIdDisplay {
+            font-size: 0.9rem; /* Smaller font for user ID */
+            color: #4a5568; /* Darker gray for user ID */
+            margin-bottom: 0.5rem;
+            text-align: right; /* Align to the right */
+            max-width: 200px; /* Limit width */
+            overflow: hidden; /* Hide overflow */
+            white-space: nowrap; /* Prevent wrapping */
+            text-overflow: ellipsis; /* Add ellipsis if text overflows */
+            flex: 1 1 100%; /* Take full width on a new line */
+        }
+
+
+        #messageBox {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.95); /* Light translucent background */
+            padding: 2rem 3rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            z-index: 100;
+            display: none; /* Hidden by default */
+            border: 2px solid #48bb78; /* Green border */
+        }
+
+        #messageBox h2 {
+            font-size: 2.5rem;
+            color: #c53030; /* Red for Game Over */
+            margin-bottom: 1rem;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(197, 48, 48, 0.5);
+        }
+
+        #messageBox p {
+            font-size: 1.2rem;
+            color: #2d3748; /* Dark gray */
+            margin-bottom: 1.5rem;
+        }
+
+        #messageBox button {
+            background-color: #689F38; /* Darker green for leaf */
+            color: white;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 9999px; /* Pill shape for leaf-like appearance */
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-shadow: 0 0 3px rgba(255, 255, 255, 0.2);
+            display: flex; /* Use flexbox for icon and text alignment */
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem; /* Space between icon and text */
+        }
+
+        #messageBox button:hover {
+            background-color: #558B2F; /* Even darker green on hover */
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #messageBox button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                width: 95vw;
+                height: 70vh; /* Adjust height for smaller screens */
+                padding: 0.5rem;
+            }
+
+            canvas {
+                height: calc(100% - 60px); /* Adjust canvas height */
+                max-height: none; /* Allow canvas to fill available height */
+            }
+
+            #score, #highScore, #coinScore, #highCoinScore {
+                font-size: 1rem; /* Smaller font for multiple scores on small screens */
+                flex: 1 1 100%; /* Each score on its own line */
+                text-align: center;
+            }
+
+            #userIdDisplay {
+                font-size: 0.8rem;
+            }
+
+            #messageBox {
+                padding: 1.5rem 2rem;
+            }
+
+            #messageBox h2 {
+                font-size: 2rem;
+            }
+
+            #messageBox p {
+                font-size: 1rem;
+            }
+
+            #messageBox button {
+                padding: 0.7rem 1.5rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-info">
+            <div id="score">Score: 0</div>
+            <div id="highScore">High Score: 0</div>
+            <div id="coinScore">Coins: 0</div>
+            <div id="highCoinScore">High Coins: 0</div>
+            <div id="userIdDisplay">User ID: Loading...</div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="messageBox" class="hidden">
+            <h2 id="messageTitle">Game Over!</h2>
+            <p id="finalScoreText">You scored: 0</p>
+            <p id="finalCoinScoreText">Coins collected: 0</p>
+            <button id="restartButton"><i class="fas fa-leaf"></i> Start Game</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Get the canvas element and its 2D rendering context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Get score and message box elements
+        const scoreDisplay = document.getElementById('score');
+        const highScoreDisplay = document.getElementById('highScore');
+        const coinScoreDisplay = document.getElementById('coinScore'); // New coin score display
+        const highCoinScoreDisplay = document.getElementById('highCoinScore'); // New high coin score display
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const messageBox = document.getElementById('messageBox');
+        const messageTitle = document.getElementById('messageTitle');
+        const finalScoreText = document.getElementById('finalScoreText');
+        const finalCoinScoreText = document.getElementById('finalCoinScoreText'); // New final coin score text
+        const restartButton = document.getElementById('restartButton');
+
+        // Firebase variables
+        let app;
+        let db;
+        let auth;
+        let userId;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // Mandatory global
+
+        // High score variables
+        let highScore = 0;
+        let highCoinScore = 0; // New high coin score
+
+        // Game variables
+        let gameRunning = false;
+        let score = 0;
+        let coinScore = 0; // New current coin score
+        let gameSpeed = 5; // Initial game speed
+        let frame = 0; // Frame counter for plant generation
+
+        // Collision padding (how much the dinosaur can overlap before collision)
+        const collisionPadding = 3; // Reduced padding to allow getting even closer
+
+        // Background elements
+        const fireflies = [];
+        const NUM_FIREFLIES = 30;
+        const backgroundBirds = [];
+        const NUM_BACKGROUND_BIRDS = 12;
+        const smallAnimals = [];
+        const NUM_SMALL_ANIMALS = 3;
+        const coins = []; // New array for coins
+        const COIN_SIZE = 10; // Size of the coins
+
+        // Function to create background fireflies
+        function createFireflies() {
+            for (let i = 0; i < NUM_FIREFLIES; i++) {
+                fireflies.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.7, // Keep them in the upper part of the forest
+                    radius: Math.random() * 1 + 0.5,
+                    opacity: Math.random() * 0.8 + 0.2,
+                    speed: Math.random() * 0.3 + 0.1, // Vary speed
+                    dx: (Math.random() - 0.5) * 0.5, // Slight horizontal drift
+                    dy: (Math.random() - 0.5) * 0.5 // Slight vertical drift
+                });
+            }
+        }
+
+        // Dinosaur properties
+        const dino = {
+            x: 50,
+            y: 0, // Will be set relative to ground
+            originalWidth: 70, // Adjusted width for smaller dinosaur
+            originalHeight: 70, // Adjusted height for smaller dinosaur
+            width: 70,
+            height: 70,
+            dy: 0, // Velocity in y-direction
+            gravity: 0.6, // Gravity pulling dino down
+            jumpPower: -12, // How high the dino jumps
+            groundY: 0, // Y-coordinate of the ground
+            isJumping: false,
+            animationFrame: 0, // For simple animation
+            animationSpeed: 8, // How fast the animation cycles
+            draw: function() {
+                ctx.save(); // Save the current canvas state
+                ctx.translate(this.x, this.y); // Move origin to dino's top-left for easier drawing
+
+                ctx.fillStyle = '#38a169'; // Forest green for dino color
+
+                // Body (main rectangle)
+                const bodyWidth = this.width * 0.5;
+                const bodyHeight = this.height * 0.4;
+                const bodyX = this.width * 0.1;
+                const bodyY = this.height * 0.6 - bodyHeight; // Position body above ground
+
+                ctx.fillRect(bodyX, bodyY, bodyWidth, bodyHeight);
+
+                // Tail (removed as per request)
+                // const tailWidth = this.width * 0.3;
+                // const tailHeight = this.height * 0.15;
+                // ctx.fillRect(bodyX - tailWidth, bodyY + bodyHeight * 0.5 - tailHeight * 0.5, tailWidth, tailHeight);
+
+                // Neck (long rectangle)
+                const neckWidth = this.width * 0.15;
+                const neckHeight = this.height * 0.4;
+                const neckX = bodyX + bodyWidth * 0.7; // Start from upper-right of body
+                const neckY = bodyY - neckHeight;
+                ctx.fillRect(neckX, neckY, neckWidth, neckHeight);
+
+                // Head (circle at end of neck)
+                const headRadius = this.width * 0.1;
+                const headX = neckX + neckWidth * 0.5;
+                const headY = neckY - headRadius;
+                ctx.beginPath();
+                ctx.arc(headX, headY, headRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Small Arms (simplified rectangles)
+                ctx.fillStyle = '#2f855a'; // Darker green
+                const armWidth = this.width * 0.05;
+                const armHeight = this.height * 0.1;
+                ctx.fillRect(bodyX + bodyWidth * 0.6, bodyY + bodyHeight * 0.1, armWidth, armHeight); // Front arm
+                ctx.fillRect(bodyX + bodyWidth * 0.4, bodyY + bodyHeight * 0.1, armWidth, armHeight); // Back arm
+
+
+                // Legs (animated and proportionate)
+                ctx.fillStyle = '#2f855a'; // Darker green for legs
+                const legWidth = this.width * 0.15;
+                const legHeight = this.height * 0.25;
+                const legY = bodyY + bodyHeight; // Legs start at the bottom of the body
+
+                let legOffset1 = 0; // Front leg
+                let legOffset2 = 0; // Back leg
+                if (!this.isJumping) {
+                    if (Math.floor(this.animationFrame / this.animationSpeed) % 2 === 0) {
+                        legOffset1 = 3; // Front leg forward
+                        legOffset2 = -3; // Back leg backward
+                    } else {
+                        legOffset1 = -3; // Front leg backward
+                        legOffset2 = 3; // Back leg forward
+                    }
+                }
+                
+                // Front leg
+                ctx.fillRect(bodyX + bodyWidth * 0.2 + legOffset1, legY, legWidth, legHeight);
+                // Back leg
+                ctx.fillRect(bodyX + bodyWidth * 0.6 + legOffset2, legY, legWidth, legHeight);
+
+
+                // Eye (simple dot on the head)
+                ctx.fillStyle = '#f7fafc'; // White/light gray
+                ctx.beginPath();
+                ctx.arc(headX + headRadius * 0.5, headY - headRadius * 0.3, 2, 0, Math.PI * 2); // Position on head
+                ctx.fill();
+
+                ctx.restore(); // Restore the canvas state
+            },
+            jump: function() {
+                if (!this.isJumping) { // No ducking state
+                    this.dy = this.jumpPower;
+                    this.isJumping = true;
+                }
+            },
+            update: function() {
+                this.dy += this.gravity; // Apply gravity
+                this.y += this.dy; // Update position based on velocity
+
+                // Prevent dino from falling through the ground
+                if (this.y + this.height > this.groundY) {
+                    this.y = this.groundY - this.height;
+                    this.dy = 0;
+                    this.isJumping = false;
+                }
+
+                // Update animation frame
+                this.animationFrame++;
+            }
+        };
+
+        // Array to hold plants
+        const plants = [];
+
+        // Plant properties
+        function Plant(x, y, width, height, type) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.type = type; // 'tree', 'bush', 'fern', 'mushroom', 'cactus'
+            this.draw = function() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                if (this.type === 'tree') {
+                    // More detailed tree with trunk and canopy
+                    ctx.fillStyle = '#8B4513'; // SaddleBrown for trunk
+                    ctx.fillRect(this.width * 0.4, this.height * 0.5, this.width * 0.2, this.height * 0.5); // Trunk
+
+                    ctx.fillStyle = '#1E8449'; // Vibrant ForestGreen for canopy
+                    ctx.beginPath();
+                    ctx.arc(this.width / 2, this.height * 0.4, this.width * 0.4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(this.width * 0.3, this.height * 0.6, this.width * 0.3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(this.width * 0.7, this.height * 0.6, this.width * 0.3, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (this.type === 'bush') {
+                    // Bush (clusters of rounded shapes)
+                    ctx.fillStyle = '#28B463'; // Vibrant MediumSeaGreen
+                    ctx.beginPath();
+                    ctx.arc(this.width * 0.3, this.height * 0.7, this.width * 0.3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(this.width * 0.7, this.height * 0.7, this.width * 0.35, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(this.width * 0.5, this.height * 0.5, this.width * 0.4, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (this.type === 'fern') {
+                    ctx.fillStyle = '#229954'; // Vibrant SeaGreen
+                    const stemWidth = this.width * 0.1;
+                    ctx.fillRect(this.width / 2 - stemWidth / 2, this.height * 0.3, stemWidth, this.height * 0.7); // Stem
+
+                    // Fronds
+                    ctx.beginPath();
+                    ctx.moveTo(this.width / 2, this.height * 0.3);
+                    ctx.quadraticCurveTo(this.width * 0.1, this.height * 0.1, 0, this.height * 0.5);
+                    ctx.quadraticCurveTo(this.width * 0.1, this.height * 0.7, this.width / 2, this.height * 0.7);
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(this.width / 2, this.height * 0.3);
+                    ctx.quadraticCurveTo(this.width * 0.9, this.height * 0.1, this.width, this.height * 0.5);
+                    ctx.quadraticCurveTo(this.width * 0.9, this.height * 0.7, this.width / 2, this.height * 0.7);
+                    ctx.fill();
+                } else if (this.type === 'mushroom') {
+                    ctx.fillStyle = '#CD5C5C'; // IndianRed for cap (more vibrant)
+                    ctx.beginPath();
+                    ctx.arc(this.width / 2, this.height * 0.4, this.width * 0.4, Math.PI, 0, false); // Cap
+                    ctx.fill();
+
+                    ctx.fillStyle = '#F8F8F8'; // WhiteSmoke for stem (brighter)
+                    ctx.fillRect(this.width * 0.4, this.height * 0.4, this.width * 0.2, this.height * 0.6); // Stem
+                } else if (this.type === 'cactus') {
+                    ctx.fillStyle = '#228B22'; // ForestGreen for cactus body
+                    const bodyWidth = this.width * 0.3; // Made skinnier
+                    const bodyHeight = this.height * 0.9; // Made taller/skinnier
+                    ctx.fillRect(this.width / 2 - bodyWidth / 2, 0, bodyWidth, bodyHeight); // Main body
+
+                    // Arms (adjusted to be smaller and closer to the body)
+                    ctx.fillRect(this.width / 2 + bodyWidth / 2 - this.width * 0.05, bodyHeight * 0.3, this.width * 0.15, this.height * 0.2); // Right arm
+                    ctx.fillRect(this.width / 2 - bodyWidth / 2 - this.width * 0.1, bodyHeight * 0.4, this.width * 0.15, this.height * 0.15); // Left arm
+
+                    // Spikes (simple dots, adjusted positions for skinnier body)
+                    ctx.fillStyle = '#F5DEB3'; // Wheat for spikes
+                    const spikeRadius = 1; // Smaller spikes
+                    for (let i = 0; i < 3; i++) { // Fewer spikes
+                        ctx.beginPath();
+                        ctx.arc(this.width / 2 - bodyWidth / 2 + (i * bodyWidth / 2), bodyHeight * 0.1 + (i * 5), spikeRadius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(this.width / 2 - bodyWidth / 2 + (i * bodyWidth / 2), bodyHeight * 0.4 + (i * 5), spikeRadius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.beginPath(); // Spikes on right arm
+                    ctx.arc(this.width / 2 + bodyWidth / 2 - this.width * 0.05, bodyHeight * 0.35, spikeRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath(); // Spikes on left arm
+                    ctx.arc(this.width / 2 - bodyWidth / 2 - this.width * 0.05, bodyHeight * 0.45, spikeRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            };
+        }
+
+        // Coin properties
+        function Coin(x, y, radius) {
+            this.x = x;
+            this.y = y;
+            this.radius = radius;
+            this.color = '#FFD700'; // Gold color
+            this.draw = function() {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#DAA520'; // Darker gold for border
+                ctx.stroke();
+                ctx.restore();
+            };
+        }
+
+        // Background Bird properties (purely decorative)
+        const BIRD_COLORS = ['#696969', '#8B4513', '#4682B4', '#5F9EA0', '#708090']; // DimGray, SaddleBrown, SteelBlue, CadetBlue, SlateGray
+        function BackgroundBird(x, y, size, speedX, color) {
+            this.x = x;
+            this.y = y;
+            this.size = size;
+            this.speedX = speedX;
+            this.color = color; // New: color property
+            this.animationFrame = 0; // For wing animation
+            this.animationSpeed = 10; // How fast wings flap
+            this.draw = function() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.fillStyle = this.color; // Use the bird's specific color
+
+                // Body (more realistic oval shape)
+                ctx.beginPath();
+                ctx.ellipse(0, 0, this.size * 0.5, this.size * 0.3, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Wings (flapping animation with smoother curves)
+                const flapOffset = Math.sin(this.animationFrame / this.animationSpeed) * (this.size * 0.15); // Up and down motion
+                const wingSpread = Math.cos(this.animationFrame / this.animationSpeed) * (this.size * 0.4); // In and out motion
+
+                // Left wing
+                ctx.beginPath();
+                ctx.moveTo(-this.size * 0.4, flapOffset); // Base near body
+                ctx.quadraticCurveTo(
+                    -this.size * 0.8, -this.size * 0.5 + flapOffset, // Control point for curve
+                    -this.size * 1.2 + wingSpread, -this.size * 0.2 + flapOffset // Tip of the wing
+                );
+                ctx.quadraticCurveTo(
+                    -this.size * 0.5, this.size * 0.3 + flapOffset, // Control point for bottom curve
+                    -this.size * 0.4, flapOffset // Back to base
+                );
+                ctx.fill();
+
+                // Right wing
+                ctx.beginPath();
+                ctx.moveTo(this.size * 0.4, flapOffset); // Base near body
+                ctx.quadraticCurveTo(
+                    this.size * 0.8, -this.size * 0.5 + flapOffset, // Control point for curve
+                    this.size * 1.2 - wingSpread, -this.size * 0.2 + flapOffset // Tip of the wing
+                );
+                ctx.quadraticCurveTo(
+                    this.size * 0.5, this.size * 0.3 + flapOffset, // Control point for bottom curve
+                    this.size * 0.4, flapOffset // Back to base
+                );
+                ctx.fill();
+
+
+                // Head (small circle)
+                ctx.beginPath();
+                ctx.arc(this.size * 0.4, -this.size * 0.2, this.size * 0.15, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Tail (small triangle)
+                ctx.beginPath();
+                ctx.moveTo(-this.size * 0.5, this.size * 0.2);
+                ctx.lineTo(-this.size * 0.7, this.size * 0.5);
+                ctx.lineTo(-this.size * 0.3, this.size * 0.5);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+            };
+        }
+
+        // Small Background Animal properties (purely decorative)
+        function SmallAnimal(x, y, size, speedX, type) {
+            this.x = x;
+            this.y = y;
+            this.size = size;
+            this.speedX = speedX;
+            this.type = type; // 'rabbit' or 'squirrel'
+            this.draw = function() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                if (this.type === 'rabbit') {
+                    ctx.fillStyle = '#A0522D'; // Sienna brown
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, this.size * 0.6, this.size * 0.4, 0, 0, Math.PI * 2); // Body
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.ellipse(this.size * 0.5, -this.size * 0.2, this.size * 0.3, this.size * 0.2, -Math.PI / 6, 0, Math.PI * 2); // Head
+                    ctx.fill();
+
+                    ctx.fillStyle = '#696969'; // DimGray for ears
+                    ctx.fillRect(this.size * 0.4, -this.size * 0.5, this.size * 0.1, this.size * 0.4);
+                    ctx.fillRect(this.size * 0.6, -this.size * 0.5, this.size * 0.1, this.size * 0.4);
+                } else if (this.type === 'squirrel') {
+                    ctx.fillStyle = '#CD853F'; // Peru brown
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, this.size * 0.5, this.size * 0.3, 0, 0, Math.PI * 2); // Body
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(this.size * 0.4, -this.size * 0.1, this.size * 0.25, 0, Math.PI * 2); // Head
+                    ctx.fill();
+
+                    ctx.fillStyle = '#8B4513'; // SaddleBrown for bushy tail
+                    ctx.beginPath();
+                    ctx.moveTo(-this.size * 0.5, this.size * 0.1);
+                    ctx.quadraticCurveTo(-this.size * 0.8, -this.size * 0.5, -this.size * 0.2, -this.size * 0.3);
+                    ctx.quadraticCurveTo(0, -this.size * 0.6, this.size * 0.1, this.size * 0.1);
+                    ctx.fill();
+                }
+                ctx.restore();
+            };
+        }
+
+
+        // Adjust canvas size and game elements based on window size
+        function resizeGame() {
+            const container = document.querySelector('.game-container');
+            canvas.width = container.clientWidth - 32; // Account for container padding
+            canvas.height = container.clientHeight - 80; // Account for score/info area
+
+            // Set ground Y relative to canvas height
+            dino.groundY = canvas.height - 40; // 40 pixels from the bottom for a thicker ground
+
+            // Initial dinosaur position
+            dino.y = dino.groundY - dino.height;
+        }
+
+        // Initial resize call
+        window.addEventListener('resize', resizeGame);
+        resizeGame(); // Call once on load
+
+        // Function to generate new plants
+        function generatePlant() {
+            // Adjusted min/max for overall smaller plants, especially cacti
+            const minWidth = 20;
+            const maxWidth = 50;
+            const minHeight = 30;
+            const maxHeight = 70;
+
+            const width = Math.random() * (maxWidth - minWidth) + minWidth;
+            const height = Math.random() * (maxHeight - minHeight) + minHeight;
+            const x = canvas.width; // Start from the right edge
+            const y = dino.groundY - height; // Position on the ground
+
+            // Removed 'tallGrass' from plantTypes
+            const plantTypes = ['tree', 'bush', 'fern', 'mushroom', 'cactus'];
+            // Increase the likelihood of trees, cacti, and mushrooms by repeating them
+            const weightedPlantTypes = ['tree', 'tree', 'bush', 'fern', 'mushroom', 'mushroom', 'cactus', 'cactus'];
+            const randomType = weightedPlantTypes[Math.floor(Math.random() * weightedPlantTypes.length)];
+
+            plants.push(new Plant(x, y, width, height, randomType));
+        }
+
+        // Function to generate coins
+        function generateCoin() {
+            const x = canvas.width + Math.random() * 200; // Start off-screen with some randomness
+            // Coins can now appear higher in the air
+            const y = dino.groundY - COIN_SIZE - (Math.random() * 100 + 30); // Varied height, higher range
+            coins.push(new Coin(x, y, COIN_SIZE));
+        }
+
+        // Function to generate background birds
+        function generateBackgroundBird() {
+            const minSize = 10; // Smaller birds
+            const maxSize = 20; // Smaller birds
+            const size = Math.random() * (maxSize - minSize) + minSize;
+            const x = canvas.width + size;
+            const y = Math.random() * (canvas.height * 0.3) + 20; // Upper part of the sky
+            const speedX = gameSpeed * (0.1 + Math.random() * 0.2); // Slower than foreground
+
+            const randomColor = BIRD_COLORS[Math.floor(Math.random() * BIRD_COLORS.length)]; // Pick a random color
+
+            backgroundBirds.push(new BackgroundBird(x, y, size, speedX, randomColor));
+        }
+
+        // Function to generate small background animals
+        function generateSmallAnimal() {
+            const minSize = 20;
+            const maxSize = 35;
+            const size = Math.random() * (maxSize - minSize) + minSize;
+            const x = canvas.width + size;
+            const y = dino.groundY - size + (Math.random() * 10 - 5); // Near ground, slight variation
+            const speedX = gameSpeed * (0.2 + Math.random() * 0.3); // Slower than foreground, faster than birds
+
+            const animalTypes = ['rabbit', 'squirrel'];
+            const randomType = animalTypes[Math.floor(Math.random() * animalTypes.length)];
+
+            smallAnimals.push(new SmallAnimal(x, y, size, speedX, randomType));
+        }
+
+
+        // Draw forest ground
+        function drawGround() {
+            ctx.fillStyle = '#8B4513'; // SaddleBrown for ground base
+            ctx.fillRect(0, dino.groundY, canvas.width, canvas.height - dino.groundY);
+
+            // Draw grass on top of the ground
+            ctx.fillStyle = '#228B22'; // ForestGreen for grass
+            const grassHeight = 15;
+            const grassBladeWidth = 5;
+            for (let i = 0; i < canvas.width; i += grassBladeWidth) {
+                ctx.beginPath();
+                ctx.moveTo(i, dino.groundY);
+                ctx.lineTo(i + grassBladeWidth / 2, dino.groundY - (Math.random() * grassHeight));
+                ctx.lineTo(i + grassBladeWidth, dino.groundY);
+                ctx.fill();
+            }
+        }
+
+        // Background layers for parallax effect
+        const backgroundLayers = [
+            { color: '#556B2F', speed: 0.1, yOffset: 0.8, shapes: [] }, // Darker, slower, closer hills
+            { color: '#6B8E23', speed: 0.05, yOffset: 0.7, shapes: [] }, // Lighter, slower hills
+            { color: '#7CFC00', speed: 0.02, yOffset: 0.6, shapes: [] }  // Farthest, slowest hills (subtle)
+        ];
+
+        // Initialize background shapes for parallax
+        function initBackgroundShapes() {
+            backgroundLayers.forEach(layer => {
+                const numShapes = 3 + Math.floor(Math.random() * 3); // 3-5 shapes per layer
+                for (let i = 0; i < numShapes; i++) {
+                    layer.shapes.push({
+                        x: Math.random() * canvas.width * 1.5, // Start off-screen to the right
+                        width: Math.random() * 200 + 100,
+                        height: Math.random() * 80 + 50,
+                        peakOffset: (Math.random() - 0.5) * 50 // Random peak position
+                    });
+                }
+            });
+        }
+
+        // Draw forest background elements (parallax hills, animated fireflies, birds, small animals)
+        function drawBackground() {
+            // Draw parallax hills
+            backgroundLayers.forEach(layer => {
+                ctx.fillStyle = layer.color;
+                layer.shapes.forEach(shape => {
+                    // Adjust x based on scroll and layer speed
+                    shape.x -= layer.speed * gameSpeed;
+                    if (shape.x + shape.width < 0) {
+                        shape.x = canvas.width + Math.random() * canvas.width; // Reset off-screen right
+                    }
+
+                    ctx.beginPath();
+                    ctx.moveTo(shape.x, canvas.height * layer.yOffset);
+                    ctx.quadraticCurveTo(
+                        shape.x + shape.width / 2 + shape.peakOffset,
+                        canvas.height * layer.yOffset - shape.height,
+                        shape.x + shape.width,
+                        canvas.height * layer.yOffset
+                    );
+                    ctx.lineTo(shape.x + shape.width, canvas.height);
+                    ctx.lineTo(shape.x, canvas.height);
+                    ctx.closePath();
+                    ctx.fill();
+                });
+            });
+
+
+            // Draw and update fireflies
+            ctx.fillStyle = 'rgba(255, 255, 100, 0.7)'; // Soft yellow for fireflies
+            for (let i = 0; i < fireflies.length; i++) {
+                const f = fireflies[i];
+                ctx.save();
+                ctx.globalAlpha = f.opacity; // Apply firefly-specific opacity
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                // Move firefly
+                f.x -= f.speed; // Move left
+                f.y += f.dy; // Slight vertical drift
+                f.x += f.dx; // Slight horizontal drift
+
+                // Wrap around if off-screen
+                if (f.x < -f.radius) {
+                    f.x = canvas.width + f.radius; // Wrap around to the right
+                    f.y = Math.random() * canvas.height * 0.7; // New random Y
+                }
+                // Bounce off top/bottom edges of the upper part of the screen
+                if (f.y < 0 || f.y > canvas.height * 0.7) {
+                    f.dy *= -1; // Reverse vertical direction
+                }
+                // Bounce off left/right edges (within the visible canvas area)
+                if (f.x < 0 || f.x > canvas.width) {
+                    f.dx *= -1; // Reverse horizontal direction
+                }
+            }
+
+            // Draw and update background birds
+            for (let i = 0; i < backgroundBirds.length; i++) {
+                const bird = backgroundBirds[i];
+                bird.x -= bird.speedX;
+                bird.animationFrame++; // Update animation frame
+                bird.draw();
+                if (bird.x + bird.size < 0) {
+                    backgroundBirds.splice(i, 1);
+                    i--;
+                    generateBackgroundBird(); // Generate a new one
+                }
+            }
+
+            // Draw and update small background animals
+            for (let i = 0; i < smallAnimals.length; i++) {
+                const animal = smallAnimals[i];
+                animal.x -= animal.speedX;
+                animal.draw();
+                if (animal.x + animal.size < 0) {
+                    smallAnimals.splice(i, 1);
+                    i--;
+                    generateSmallAnimal(); // Generate a new one
+                }
+            }
+        }
+
+        // Update game state
+        function update() {
+            if (!gameRunning) return;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw forest background and animated elements
+            drawBackground();
+
+            // Draw ground
+            drawGround();
+
+            // Update and draw dinosaur
+            dino.update();
+            dino.draw();
+
+            // Update and draw plants
+            for (let i = 0; i < plants.length; i++) {
+                const plant = plants[i];
+                plant.x -= gameSpeed; // Move plant to the left
+                plant.draw();
+
+                // Collision detection with plants - Game Over on collision
+                // AABB collision detection with padding
+                if (
+                    dino.x + collisionPadding < plant.x + plant.width &&
+                    dino.x + dino.width - collisionPadding > plant.x &&
+                    dino.y + collisionPadding < plant.y + plant.height &&
+                    dino.y + dino.height - collisionPadding > plant.y
+                ) {
+                    endGame('loss'); // Call endGame with 'loss' status
+                    return; // Stop the game loop
+                }
+
+                // Remove plants that are off-screen
+                if (plant.x + plant.width < 0) {
+                    plants.splice(i, 1);
+                    i--; // Adjust index after removing an element
+                    score++; // Increment score for successfully passing a plant
+                    scoreDisplay.textContent = `Score: ${score}`;
+
+                    // Increase game speed every 20 points
+                    if (score > 0 && score % 20 === 0) {
+                        gameSpeed += 0.7; // Increase speed by 0.7
+                        console.log("Game Speed increased to: " + gameSpeed);
+                    }
+                }
+            }
+
+            // Update and draw coins
+            for (let i = 0; i < coins.length; i++) {
+                const coin = coins[i];
+                coin.x -= gameSpeed; // Move coin to the left
+                coin.draw();
+
+                // Coin collision detection (circle-rectangle)
+                // Find the closest point on the AABB (dino) to the circle (coin)
+                let testX = coin.x;
+                let testY = coin.y;
+
+                if (coin.x < dino.x) {
+                    testX = dino.x;
+                } else if (coin.x > dino.x + dino.width) {
+                    testX = dino.x + dino.width;
+                }
+
+                if (coin.y < dino.y) {
+                    testY = dino.y;
+                } else if (coin.y > dino.y + dino.height) {
+                    testY = dino.y + dino.height;
+                }
+
+                // Calculate the distance between the closest point and the circle's center
+                let distX = coin.x - testX;
+                let distY = coin.y - testY;
+                let distance = Math.sqrt((distX * distX) + (distY * distY));
+
+                // If the distance is less than the circle's radius, there's a collision
+                if (distance <= coin.radius) {
+                    coinScore++; // Increment coin score
+                    coinScoreDisplay.textContent = `Coins: ${coinScore}`;
+                    coins.splice(i, 1); // Remove collected coin
+                    i--; // Adjust index
+                }
+
+                // Remove coins that are off-screen
+                if (coin.x + coin.radius < 0) {
+                    coins.splice(i, 1);
+                    i--; // Adjust index
+                }
+            }
+
+
+            // Generate new plants at random intervals
+            if (frame % 100 === 0 && Math.random() < 0.8) { // Adjust frequency
+                generatePlant();
+            }
+
+            // Generate new coins at random intervals (more frequently)
+            if (frame % 80 === 0 && Math.random() < 0.9) { // Increased frequency for more coins
+                 generateCoin();
+            }
+
+
+            // Generate new background birds occasionally
+            if (backgroundBirds.length < NUM_BACKGROUND_BIRDS && frame % 100 === 0 && Math.random() < 0.9) { // Increased frequency
+                generateBackgroundBird();
+            }
+
+            // Generate new small background animals occasionally
+            if (smallAnimals.length < NUM_SMALL_ANIMALS && frame % 400 === 0 && Math.random() < 0.5) {
+                generateSmallAnimal();
+            }
+
+            frame++;
+            requestAnimationFrame(update); // Continue the game loop
+        }
+
+        // Game End function (handles both win and potential future loss states)
+        function endGame(status) {
+            gameRunning = false;
+            if (status === 'win') { // This branch is currently unreachable without WIN_SCORE
+                messageTitle.textContent = "You Won!";
+                finalScoreText.textContent = `Congratulations! You reached ${score} points!`;
+            } else { // status === 'loss'
+                messageTitle.textContent = "Game Over!";
+                finalScoreText.textContent = `You scored: ${score}`;
+            }
+            finalCoinScoreText.textContent = `Coins collected: ${coinScore}`; // Display final coin score
+
+            // Update high scores
+            if (score > highScore) {
+                highScore = score;
+                highScoreDisplay.textContent = `High Score: ${highScore}`;
+                finalScoreText.textContent += ` (New High Score!)`;
+                if (db) {
+                    setHighScoreToFirestore(highScore);
+                }
+            }
+            if (coinScore > highCoinScore) {
+                highCoinScore = coinScore;
+                highCoinScoreDisplay.textContent = `High Coins: ${highCoinScore}`;
+                finalCoinScoreText.textContent += ` (New High Score!)`;
+                if (db) {
+                    setHighCoinScoreToFirestore(highCoinScore);
+                }
+            }
+            messageBox.style.display = 'block'; // Show the message box
+        }
+
+        // Restart Game function
+        function restartGame() {
+            messageBox.style.display = 'none'; // Hide the message box
+            score = 0;
+            coinScore = 0; // Reset coin score
+            scoreDisplay.textContent = `Score: 0`;
+            coinScoreDisplay.textContent = `Coins: 0`; // Update coin score display
+            gameSpeed = 5;
+            plants.length = 0; // Clear all plants
+            coins.length = 0; // Clear all coins
+            fireflies.length = 0; // Clear fireflies
+            backgroundBirds.length = 0; // Clear background birds
+            smallAnimals.length = 0; // Clear small animals
+
+            dino.height = dino.originalHeight; // Reset dino height
+            dino.y = dino.groundY - dino.height; // Reset dino position
+            dino.dy = 0;
+            dino.isJumping = false;
+            frame = 0;
+            // Re-initialize background shapes for fresh parallax
+            backgroundLayers.forEach(layer => layer.shapes = []);
+            initBackgroundShapes();
+            createFireflies(); // Recreate fireflies
+            // Initial generation for birds/animals
+            for (let i = 0; i < NUM_BACKGROUND_BIRDS; i++) generateBackgroundBird();
+            for (let i = 0; i < NUM_SMALL_ANIMALS; i++) generateSmallAnimal();
+            // No initial coins, they will be generated in the update loop
+            gameRunning = true;
+            update(); // Start the game loop again
+        }
+
+        // Event listeners for jumping (Spacebar and ArrowUp)
+        document.addEventListener('keydown', (e) => {
+            if (gameRunning) {
+                if (e.code === 'Space' || e.code === 'ArrowUp') {
+                    dino.jump();
+                }
+            } else if (!gameRunning && messageBox.style.display === 'none') {
+                // If game not running and message box is hidden (initial state), start game
+                restartGame();
+            }
+        });
+
+        // Touch event for jumping on mobile (tap anywhere)
+        canvas.addEventListener('touchstart', (e) => {
+            if (gameRunning) {
+                dino.jump();
+            } else if (!gameRunning && messageBox.style.display === 'none') {
+                restartGame();
+            }
+        });
+
+        // Restart button click listener
+        restartButton.addEventListener('click', restartGame);
+
+        // Firebase Setup Functions
+        async function setupFirebase() {
+            try {
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Sign in anonymously or with custom token
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                userId = auth.currentUser?.uid || crypto.randomUUID();
+                userIdDisplay.textContent = `User ID: ${userId}`;
+
+                // Fetch high scores after auth is ready
+                await getHighScoreFromFirestore();
+                await getHighCoinScoreFromFirestore(); // Fetch high coin score
+
+            } catch (error) {
+                console.error("Error setting up Firebase:", error);
+                // Display a message to the user if Firebase setup fails
+                messageBox.querySelector('h2').textContent = "Error!";
+                messageBox.querySelector('p').textContent = "Failed to connect to game services. Try refreshing.";
+                messageBox.style.display = 'block';
+            }
+        }
+
+        // Function to get high score from Firestore
+        async function getHighScoreFromFirestore() {
+            try {
+                const highscoreDocRef = doc(db, `artifacts/${appId}/public/data/highscores`, 'global');
+                const highscoreDocSnap = await getDoc(highscoreDocRef);
+
+                if (highscoreDocSnap.exists()) {
+                    const data = highscoreDocSnap.data();
+                    highScore = data.value || 0;
+                    highScoreDisplay.textContent = `High Score: ${highScore}`;
+                } else {
+                    console.log("No high score document found, initializing to 0.");
+                    highScore = 0;
+                    highScoreDisplay.textContent = `High Score: 0`;
+                }
+            } catch (error) {
+                console.error("Error getting high score:", error);
+                // Optionally display an error but don't stop the game
+            }
+        }
+
+        // Function to set high score to Firestore
+        async function setHighScoreToFirestore(newHighScore) {
+            try {
+                const highscoreDocRef = doc(db, `artifacts/${appId}/public/data/highscores`, 'global');
+                await setDoc(highscoreDocRef, {
+                    value: newHighScore,
+                    achievedBy: userId,
+                    timestamp: serverTimestamp() // Add a timestamp
+                }, { merge: true }); // Use merge to update existing fields or create if not exists
+                console.log("High score updated successfully!");
+            } catch (error) {
+                console.error("Error setting high score:", error);
+                // Optionally display an error
+            }
+        }
+
+        // New function to get high coin score from Firestore
+        async function getHighCoinScoreFromFirestore() {
+            try {
+                const highCoinscoreDocRef = doc(db, `artifacts/${appId}/public/data/highCoinScores`, 'global'); // Separate collection
+                const highCoinscoreDocSnap = await getDoc(highCoinscoreDocRef);
+
+                if (highCoinscoreDocSnap.exists()) {
+                    const data = highCoinscoreDocSnap.data();
+                    highCoinScore = data.value || 0;
+                    highCoinScoreDisplay.textContent = `High Coins: ${highCoinScore}`;
+                } else {
+                    console.log("No high coin score document found, initializing to 0.");
+                    highCoinScore = 0;
+                    highCoinScoreDisplay.textContent = `High Coins: 0`;
+                }
+            } catch (error) {
+                console.error("Error getting high coin score:", error);
+            }
+        }
+
+        // New function to set high coin score to Firestore
+        async function setHighCoinScoreToFirestore(newHighCoinScore) {
+            try {
+                const highCoinscoreDocRef = doc(db, `artifacts/${appId}/public/data/highCoinScores`, 'global'); // Separate collection
+                await setDoc(highCoinscoreDocRef, {
+                    value: newHighCoinScore,
+                    achievedBy: userId,
+                    timestamp: serverTimestamp()
+                }, { merge: true });
+                console.log("High coin score updated successfully!");
+            } catch (error) {
+                console.error("Error setting high coin score:", error);
+            }
+        }
+
+        // Initial message to start the game
+        function showStartMessage() {
+            messageTitle.textContent = "Dinosaur Run!";
+            messageBox.querySelector('p').textContent = "Press SPACE or ARROW UP to jump. Tap to start/jump!";
+            finalCoinScoreText.textContent = ""; // Clear coin score text on start message
+            restartButton.innerHTML = '<i class="fas fa-leaf"></i> Start Game'; // Set button content with icon
+            messageBox.style.display = 'block';
+        }
+
+        // Initialize game on window load
+        window.onload = async function() {
+            resizeGame(); // Ensure canvas is sized correctly on load
+            createFireflies(); // Initialize background fireflies
+            initBackgroundShapes(); // Initialize parallax background shapes
+            // Initial generation of background animals/birds
+            for (let i = 0; i < NUM_BACKGROUND_BIRDS; i++) generateBackgroundBird();
+            for (let i = 0; i < NUM_SMALL_ANIMALS; i++) generateSmallAnimal();
+
+            showStartMessage(); // Show initial start message
+            await setupFirebase(); // Setup Firebase and fetch high scores
+        };
+
+    </script>
+</body>
+</html>
