@@ -19,7 +19,7 @@ Here's a mockup and design of the project:
 
 Here's a walkthrough of implemented features:
 
-<img src=' ' title='Video Walkthrough' width='' alt='Video Walkthrough' />
+![Snake-game](./Dinogame.gif)
 
 ## Notes and Comments
 
